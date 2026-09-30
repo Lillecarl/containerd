@@ -379,7 +379,8 @@ func testOverlayRemappedBind(t *testing.T, newSnapshotter testsuite.SnapshotterF
 		}
 
 		bp := getBasePath(ctx, o, root, key)
-		expected := []string{test.expUIDMntOpt, test.expGIDMntOpt, "rw", "rbind"}
+		// Chowned to the remapped root and not idmapped as well: see mounts.
+		expected := []string{"rw", "rbind"}
 
 		checkMountOpts := func() {
 			if len(mounts) != 1 {
@@ -410,7 +411,9 @@ func testOverlayRemappedBind(t *testing.T, newSnapshotter testsuite.SnapshotterF
 		}
 		checkMountOpts()
 
-		expected[2] = "ro"
+		// A view of a committed parent is a bind of the parent, and that one
+		// is idmapped.
+		expected = []string{test.expUIDMntOpt, test.expGIDMntOpt, "ro", "rbind"}
 		if err = o.Commit(ctx, "base", key, opts...); err != nil {
 			t.Fatal(err)
 		}
@@ -427,8 +430,7 @@ func testOverlayRemappedBind(t *testing.T, newSnapshotter testsuite.SnapshotterF
 
 		bp = getBasePath(ctx, o, root, key)
 
-		expected = expected[2:]
-		expected[0] = "rw"
+		expected = []string{"rw", "rbind"}
 
 		test.expUID = 0
 		test.expGID = 0

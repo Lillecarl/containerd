@@ -572,14 +572,19 @@ func (o *snapshotter) mounts(s storage.Snapshot, info snapshots.Info) []mount.Mo
 		if s.Kind == snapshots.KindView {
 			roFlag = "ro"
 		}
+		// No uidmap/gidmap options: createSnapshot has already chowned this
+		// directory to the remapped root, as it does an overlay's upperdir.
+		// Idmapping the bind as well maps that owner a second time, out of
+		// the range, and the container's root cannot create anything in its
+		// rootfs, not even the /proc mount point.
 		return []mount.Mount{
 			{
 				Source: o.upperPath(s.ID),
 				Type:   "bind",
-				Options: append(options,
+				Options: []string{
 					roFlag,
 					"rbind",
-				),
+				},
 			},
 		}
 	}
